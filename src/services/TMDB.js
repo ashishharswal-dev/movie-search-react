@@ -5,7 +5,6 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 // eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmNTA3OWVhM2UyODQzMzdjNjM4NzVkYWJlMDI0OTUyMiIsInN1YiI6IjY0ZDRhNGM0ZGI0ZWQ2MDEzOTU4YWQ4NSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.RUzDF1XK_Bk5aZcwANWEk_NcYsznLnQCQnwMrj-uPbc
 
 const tmdbApiKey = process.env.REACT_APP_TMDB_KEY;
-const page = 1;
 
 export const tmdbApi = createApi({
   reducerPath: 'tmdbApi',
@@ -18,7 +17,50 @@ export const tmdbApi = createApi({
 
     //* Get Movies by [Type]
     getMovies: builder.query({
-      query: () => `movie/popular?page=${page}&api_key=${tmdbApiKey}`,
+      query: ({ genreIdOrCategoryName, page, searchQuery }) => {
+        // Get Movies by Search Query
+        if (searchQuery) {
+          return `/search/movie?query=${searchQuery}&page=${page}&api_key=${tmdbApiKey}`;
+        }
+        // Get Movies by category
+        if (genreIdOrCategoryName && typeof genreIdOrCategoryName === 'string') {
+          return `movie/${genreIdOrCategoryName}?page=${page}&api_key=${tmdbApiKey}`;
+        }
+
+        // Get Movies by Genre
+        if (genreIdOrCategoryName && typeof genreIdOrCategoryName === 'number') {
+          return `discover/movie?with_genres=${genreIdOrCategoryName}&page=${page}&api_key=${tmdbApiKey}`;
+        }
+        // Get Popular movies
+        return `movie/popular?page=${page}&api_key=${tmdbApiKey}`;
+      },
+    }),
+
+    // Get Movie
+    getMovie: builder.query({
+      query: (id) => `/movie/${id}?append_to_response=videos,credits&api_key=${tmdbApiKey}`,
+    }),
+
+    // Get User specific List
+    getRecommendation: builder.query({
+      query: ({ movie_id, list }) => `/movie/${movie_id}/${list}?api_key=${tmdbApiKey}`,
+    }),
+
+    // Get Actor specific List
+    getActorsDetails: builder.query({
+      query: (id) => `person/${id}?api_key=${tmdbApiKey}`,
+    }),
+
+    // Get movies by actors id
+    getMoviesByActorId: builder.query({
+      query: ({ id, page }) => `/discover/movie?with_cast=${id}&page=${page}&api_key=${tmdbApiKey}`,
+    }),
+
+    // Get user specific list
+    getList: builder.query({
+      query: ({
+        listName, accountId, sessionId, page,
+      }) => `/account/${accountId}/${listName}?api_key=${tmdbApiKey}&session_id=${sessionId}&page=${page}`,
     }),
 
   }),
@@ -27,4 +69,9 @@ export const tmdbApi = createApi({
 export const {
   useGetMoviesQuery,
   useGetGenresQuery,
+  useGetMovieQuery,
+  useGetRecommendationQuery,
+  useGetActorsDetailsQuery,
+  useGetMoviesByActorIdQuery,
+  useGetListQuery,
 } = tmdbApi;
